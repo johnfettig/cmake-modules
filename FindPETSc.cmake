@@ -17,6 +17,8 @@
 # Setting these changes the behavior of the search
 #  PETSC_DIR - directory in which PETSc resides
 #  PETSC_ARCH - build architecture
+#  PETSC_INCPATH - Path to external includes needed by PETSc
+#  PETSC_LIBPATH - Path to external libraries needed by PETSc
 #
 # Redistribution and use is allowed according to the terms of the BSD license.
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
@@ -156,6 +158,12 @@ show :
 
   include (ResolveCompilerPaths)
   # Extract include paths and libraries from compile command line
+  if (DEFINED PETSC_INCPATH)
+    foreach (directory ${PETSC_INCPATH})
+      set (petsc_cpp_line "-I${directory} ${petsc_cpp_line}")
+    endforeach (directory)
+  endif (DEFINED PETSC_INCPATH)
+  set (petsc_cpp_line "-I${PETSC_DIR}/include -I${PETSC_DIR}/${PETSC_ARCH}/include ${petsc_cpp_line}")
   resolve_includes (petsc_includes_all "${petsc_cpp_line}")
 
   #on windows we need to make sure we're linking against the right
@@ -278,6 +286,12 @@ int main(int argc,char *argv[]) {
       message (STATUS "PETSc requires extra include paths, but links correctly with only interface libraries.  This is an unexpected configuration (but it seems to work fine).")
       set (petsc_includes_needed ${petsc_includes_all})
     else (petsc_works_allincludes) # We are going to need to link the external libs explicitly
+      if (DEFINED PETSC_LIBPATH)
+        foreach (directory ${PETSC_LIBPATH})
+          set (petsc_libs_external "-L${directory} ${petsc_libs_external}")
+        endforeach (directory)
+      endif (DEFINED PETSC_LIBPATH)
+      set (petsc_libs_external "-L${PETSC_DIR}/${PETSC_ARCH}/lib ${petsc_libs_external}")
       resolve_libraries (petsc_libraries_external "${petsc_libs_external}")
       foreach (pkg SYS VEC MAT DM KSP SNES TS ALL)
 	list (APPEND PETSC_LIBRARIES_${pkg}  ${petsc_libraries_external})
